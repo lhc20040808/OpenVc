@@ -11,6 +11,7 @@
 
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 
+
 extern "C" {
 
 using namespace cv;
@@ -18,15 +19,18 @@ using namespace std;
 
 void bitmap2Mat(JNIEnv *env, jobject bitmap, Mat &dst);
 void releaseANativeWindow();
+void releaseClassifier();
 
 CascadeClassifier *cascadeClassifier;
 ANativeWindow *nativeWindow;
 
 JNIEXPORT void JNICALL
-Java_com_lhc_openvc_identify_Identifier_setClassifier(JNIEnv *env, jobject instance,
+Java_com_lhc_openvc_identify_FaceIdentifier_setClassifier(JNIEnv *env, jobject instance,
                                                       jstring path_) {
     const char *path = env->GetStringUTFChars(path_, 0);
-    LOGI("native--->加载分类器");
+
+    releaseClassifier();
+
     cascadeClassifier = new CascadeClassifier(path);
 
     env->ReleaseStringUTFChars(path_, path);
@@ -34,7 +38,7 @@ Java_com_lhc_openvc_identify_Identifier_setClassifier(JNIEnv *env, jobject insta
 
 
 JNIEXPORT int JNICALL
-Java_com_lhc_openvc_identify_Identifier_setBitmap(JNIEnv *env, jobject instance, jobject bitmap) {
+Java_com_lhc_openvc_identify_FaceIdentifier_setBitmap(JNIEnv *env, jobject instance, jobject bitmap) {
 
     int ret = 1;
     Mat src;
@@ -67,7 +71,6 @@ Java_com_lhc_openvc_identify_Identifier_setBitmap(JNIEnv *env, jobject instance,
         ret = 0;
         goto end;
     }
-    LOGI("window buffer width:%d height:%d", window_buffer.width, window_buffer.height);
     cvtColor(src, src, CV_BGR2RGBA);
     resize(src, src, Size(window_buffer.width, window_buffer.height));
     memcpy(window_buffer.bits, src.data, window_buffer.width * window_buffer.height * 4);
@@ -80,7 +83,7 @@ Java_com_lhc_openvc_identify_Identifier_setBitmap(JNIEnv *env, jobject instance,
 }
 
 JNIEXPORT void JNICALL
-Java_com_lhc_openvc_identify_Identifier_setSurface(JNIEnv *env, jobject instance, jobject surface,
+Java_com_lhc_openvc_identify_FaceIdentifier_setSurface(JNIEnv *env, jobject instance, jobject surface,
                                                    jint width, jint height) {
 
     if (surface && width && height) {
@@ -88,7 +91,7 @@ Java_com_lhc_openvc_identify_Identifier_setSurface(JNIEnv *env, jobject instance
 
         nativeWindow = ANativeWindow_fromSurface(env, surface);
         if (nativeWindow) {
-            LOGI("创建native window width:%d height:%d", width, height);
+//            LOGI("创建native window width:%d height:%d", width, height);
             ANativeWindow_setBuffersGeometry(nativeWindow, width, height, WINDOW_FORMAT_RGBA_8888);
         }
     } else {
@@ -98,12 +101,9 @@ Java_com_lhc_openvc_identify_Identifier_setSurface(JNIEnv *env, jobject instance
 }
 
 JNIEXPORT void JNICALL
-Java_com_lhc_openvc_identify_Identifier_destroy(JNIEnv *env, jobject instance) {
+Java_com_lhc_openvc_identify_FaceIdentifier_destroy(JNIEnv *env, jobject instance) {
 
-    if (cascadeClassifier) {
-        delete cascadeClassifier;
-        cascadeClassifier = 0;
-    }
+    releaseClassifier();
 
     releaseANativeWindow();
 }
@@ -185,5 +185,14 @@ void releaseANativeWindow() {
     }
 }
 
+void releaseClassifier() {
+    if (cascadeClassifier) {
+        delete cascadeClassifier;
+        cascadeClassifier = 0;
+    }
 }
+
+}
+
+
 

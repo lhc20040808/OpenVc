@@ -4,18 +4,16 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 
 import com.lhc.openvc.identify.FaceIdentifier;
-import com.lhc.openvc.identify.Identifier;
 
 public class MainActivity extends AppCompatActivity implements SurfaceHolder.Callback {
     private Album album;
     private SurfaceView mSurface;
-    private Identifier identifier;
+    private FaceIdentifier identifier;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,8 +22,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         mSurface = (SurfaceView) findViewById(R.id.surface_view);
         mSurface.getHolder().addCallback(this);
         album = new Album();
-        identifier = new Identifier();
-        identifier.setListener(new FaceIdentifier());
+        identifier = new FaceIdentifier();
         identifier.loadFile(this, "haarcascade_frontalface_alt.xml");
     }
 
@@ -35,8 +32,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         if (resultCode == RESULT_OK) {
             switch (requestCode) {
                 case Album.ALBUM_REQUEST_CODE:
-                    Log.d("test", "Surface:" + (mSurface.getHolder().getSurface() == null));
-                    album.getPicWithScale(this, data, 480, 640);
+                    album.getPicWithScale(this, data, mSurface.getWidth(), mSurface.getHeight());
                     Bitmap bitmap = album.getBitmap();
                     identifier.loadBitmap(bitmap);
                     break;
@@ -63,9 +59,8 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
     @Override
     public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i1, int i2) {
-        Log.d("test", "surfaceChanged" + " width:" + mSurface.getWidth() + " height:" + mSurface.getHeight());
-        identifier.loadSurface(surfaceHolder.getSurface(), 480, 640);//TODO 宽高动态获取
         Bitmap bitmap = album.getBitmap();
+        identifier.loadSurface(surfaceHolder.getSurface(), 640, 960);//TODO 宽高动态获取
         identifier.loadBitmap(bitmap);
     }
 
